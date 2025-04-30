@@ -1,0 +1,110 @@
+---
+title: "STAT359HW6"
+author: "Mikayla Mulgrew V00923052"
+date: "12/12/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Q1.(a)
+```{r a}
+geriatric<-read.table(file='C:/Users/Mik/Documents/UVIC/STAT359/data/geriatric.txt', 
+                      sep="", header=TRUE)
+attach(geriatric)
+
+
+library(knitr)
+kable(geriatric[1:10,], caption='Frequency of Falls in Geriatrics', align='l')
+
+par(mfrow=c(2,2))
+#determining whether Geriatrics fall less when they are educated on fall prevention.
+
+#Number of Geriatrics for each amount of falls
+falls<-table(Fall)
+falls
+
+hist(Fall, main='Number of Falls', xlab='Falls')
+
+#boxplot to visualize amount of falls differentiated by gender
+boxplot(Fall[Sex==0], Fall[Sex==1], names=c("Female", "Male"), main="Falls by Gender")
+#doesnt seem to be a huge variation in number of falls based solely on gender
+
+#boxplot to visualize amount of falls differentiated by education or education and aerobics
+boxplot(Fall[Int==0], Fall[Int==1], names=c("Education","Education and Aerobics"))
+#seem to be a lot less falls for geriatrics with education and aerobics
+
+plot(Fall, log(BI),xlab='Number of Falls', ylab='Balance Index', 
+     main='Number of Falls vs Balance Index')
+#there seems to be a positive relationship between number of falls and the 
+#balance index for a geriatric
+
+plot(Fall, log(SI), xlab='Number of Falls', ylab='Strength Index', 
+     main='Number of Falls vs Strength Index')
+#there seems to be a positive relationship between number of falls and the 
+#strength index for a geriatric
+
+
+#fit a poisson model to the data
+fit<-glm(Fall~Int+Sex+BI+SI, family=poisson, data=geriatric)
+#Summary table with estimated coefficients, estimated standard errors
+summary(fit)
+
+#95% confidence intervals 
+confint(fit)
+```
+(b)
+```{r b}
+#model deviance and goodness of fit-test
+deviance(fit)
+fit$df.residual
+
+#The null hypothesis H0: the model is adequate, the alternative is that the model is not adequate
+#Testing at a level of significance of 0.05
+1-pchisq(deviance(fit), fit$df.residual)
+#Not significant evidence to reject the null hypothesis, therefore the model is adequate.
+
+```
+(c)
+```{r c}
+par(mfrow=c(2,2))
+plot(fit, which=c(1,2,4))
+
+#There seems to be a few outlying cases. Points 93, 42, 37. And 52 according to cook's distance. 
+```
+(d)
+```{r d}
+#deviance test to test the hypothesis that gender can be dropped from the model. 
+fit2<-update(fit,~.-Sex)
+summary(fit2)
+
+#Null hypothesis H0: the coefficient for the sex term is equal to 0
+#whereas the alternative hypothesis is that the coefficient for the sex term 
+#is not equal to zero
+anova(fit2, fit, test="Chi")
+
+1-pchisq(deviance(fit2)-deviance(fit), df=1)
+#Not significant evidence to reject the null hypothesis that the coefficient for the 
+#sex term is equal to zero. 
+#Given that the coefficient is most likely very close to zero it would be 
+#reasonable to drop sex from the model.   
+```
+(e)
+```{r e}
+fit2<-update(fit,~.-Sex)
+summary(fit2)
+par(mfrow=c(2,2))
+plot(fit2, which=c(1,2,4))
+
+#confidence intervals for coefficients present in fit2 model
+confint(fit2)
+#95% confidence interval for intervention coefficient is (-1.3411096967, -0.82520388)
+#Since the the confidence interval is made up of negative values indicates that increasing 
+#intervention would decrease the odds of interventions success.  
+```
+(f)
+Aerobic exercise is associated with a reduction in the frequency of falls when controlling for balance and strength. In the first few graphs, there seems to be a definite shift in the fall distribution between those who have had fall education versus those who have had education and aerobic exercise. Those who have had aerobic exercise as well as education, seem to have had less falls on average. From (d), sex is dropped from the model so the reduction in the frequency of falls follows when balance and strength are controlled.    

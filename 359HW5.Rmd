@@ -1,0 +1,120 @@
+---
+title: "359HW5"
+author: "Mikayla Mulgrew V00923052"
+date: "05/12/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Q1.
+```{r Q1}
+beef<-read.table(file='C:/Users/Mik/Documents/UVIC/STAT359/data/data/beef.txt', sep=""
+                 , header=TRUE, na.strings="NA")
+attach(beef)
+
+library(knitr)
+kable(beef, caption="Beef Consumption Data", align='r')
+
+#20 data points, therefore want no more than 6 parameters
+
+pairs(beef, panel=panel.smooth)
+#seems to be a positive correlation price and income and price and year, income and year
+#a few graphs have large dips in points occurring around the 30's
+#seeing some effects of the great depression?
+#doesn't seem to be any correlation between price and beef consumption
+#there may be some correlation between income and beef consumption
+#may be some negative/curved correlation between pork consumption and price
+
+beef.model<-lm(Beef.Consumption~Income*Year*Price*Pork.Consumption)
+summary(beef.model)
+b1.model<-update(beef.model,~.-Income:Year:Price:Pork.Consumption)
+summary(b1.model)
+b2.model<-update(b1.model,~.-Income:Year:Price)
+summary(b2.model)
+b3.model<-update(b2.model,~.-Income:Year:Pork.Consumption)
+summary(b3.model)
+b4.model<-update(b3.model,~.-Income:Price:Pork.Consumption)
+summary(b4.model)
+b5.model<-update(b4.model,~.-Year:Price:Pork.Consumption)
+summary(b5.model)
+b6.model<-update(b5.model,~.-Price:Pork.Consumption)
+summary(b6.model)
+b7.model<-update(b6.model,~.-Year:Pork.Consumption)
+summary(b7.model)
+b8.model<-update(b7.model,~.-Income:Pork.Consumption)
+summary(b8.model)
+b9.model<-update(b8.model,~.-Income:Price)
+summary(b9.model)
+b10.model<-update(b9.model,~.-Income:Year)
+summary(b10.model)
+
+#Went from 6 parameters to 5 because one of the 6 terms still was not significant.
+
+par(mfrow=c(2,2))
+plot(b8.model,which=c(1,2,4))
+```
+
+The variance of the residuals is very consistent.
+The QQ-plot gives some indication of normality. 
+The interaction between Year and Price is somewhat significant.
+Income and Pork-COnsumption are the most significant in the model, so they contribute
+the most to the variability of beef consumption. 
+This model explains approximately 94.26% of the variability in beef consumption.
+
+Q2.
+```{r Q2}
+cholesterol<-read.table(file='C:/Users/Mik/Documents/UVIC/STAT359/data/data/chol.txt', 
+                        sep="", header=TRUE)
+attach(cholesterol)
+
+library(knitr)
+kable(cholesterol, caption="Cholesterol Study", align='r')
+
+plot(BMI, CHOL, xlab='Body Mass Index (BMI)', ylab='Cholesterol Level')
+title('BMI and Cholesterol Level')
+#appears to be a positive correlation. Higher Cholesterol level for higher BMI, with some exceptions. 
+#some observations have much higher cholesterol levels than other BMI's at the same level. 
+model1<-lm(CHOL~BMI)
+abline(model1)
+summary(model1)
+#with an R-squared value of only 0.2865, model1 is not a good fit
+#with a p-value of 0.002303, reject H0 = linear model is a good fit/no relationship between 
+#Cholesterol and BMI.
+
+2*(1-pt(3.353,length(BMI)-2))
+#value = 0.002305173
+
+coef(model1)[2]
+#value =0.3089659 
+
+confint(model1)
+
+pairs(cholesterol, panel=panel.smooth)
+##appears to be some positive correlation between cholesterol and age. and maybe 
+#between BMI and cholesterol
+#Age and BMI don't seem to have much correlation, very scattered
+
+model2<-lm(CHOL~BMI*Age)
+summary(model2)
+model3<-update(model2,~.-BMI:Age)
+summary(model3)
+
+
+model4<-step(model3)
+summary(model4)
+par(mfrow=c(2,2))
+plot(model4)
+
+#The residual plots show that the variance and normality are reasonable 
+#The QQ-plot seems to have a heavier right side, will try log transform
+
+model5<-lm(log(CHOL)~BMI+Age)
+model6<-step(model5)
+summary(model6)
+par(mfrow=c(2,2))
+plot(model6)
+```
+
+First tested the model CHOL~BMI without Age. But with an R-squared value of 0.2865, pursued a more comprehensive model. But the p-value is 0.002303 so there is evidence of a relationship between Cholesterol and BMI. Adding Age to the model, Next testing BMI*Age to get the interaction term as well. The interaction between BMI was not significant so the model was updated and ends up being BMI+Age. After plotting the residual plots for the minimally adequate model, there was a reasonable amount of variance but there is a heavier right tail on the QQ-plot. Performing a log transform seemed more normal with the exception of point 24. The R-squared value for the log transformed data was also marginally better than previous model suggesting a better explanation of variability. Points 24,25,17 are extreme in each of the plots. Since the effects of BMI and Age are additive, there interaction does not have a significant relationship with Cholesterol level.

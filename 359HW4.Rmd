@@ -1,0 +1,296 @@
+---
+title: "359HW4"
+author: "Mikayla Mulgrew V00923052"
+date: "22/11/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Q1.
+```{r Q1}
+lungcancer<-read.csv('C:/Users/Mik/Documents/UVIC/STAT359/data/data/LungCancer.csv', 
+                     header=TRUE, sep=",", fileEncoding="UTF-8-BOM", na.strings="NA")
+#1 - lung cancer, 0 - no lung cancer
+lung.c<-table(lungcancer)
+print(lung.c)
+
+#Expected values for each factor and level
+chi.table<-chisq.test(lung.c, correct=FALSE)$expected
+print(chi.table)
+
+#null hypothesis: there is independence between lung-cancer and smoking
+#alternative hypothesis: there is an association (dependence) between lung-cancer and smoking
+
+#Computing by hand the observed value of the Chi-Square test statistic
+chi11<-((lung.c[1,1] - chi.table[1,1])^2)/chi.table[1,1]
+chi12<-((lung.c[1,2] - chi.table[1,2])^2)/chi.table[1,2]
+chi21<-((lung.c[2,1] - chi.table[2,1])^2)/chi.table[2,1]
+chi22<-((lung.c[2,2] - chi.table[2,2])^2)/chi.table[2,2]
+
+ochi.sq<-chi11 + chi12 + chi21 + chi22
+print(ochi.sq)
+
+#same as show in the chisq.test
+chisq.test(lung.c, correct=FALSE)
+
+#If there is no association between smoking and lung cancer, then the null hypothesis 
+#is true and the null distribution is the distribution of the test statistic, therefore
+#the distribution will be a chi-squared distribution. 
+
+#The chisq.test returns a p-value of 1.585e-05. At a significance level of 0.05, this 
+#p-value gives significant evidence against the null hypothesis, stated above, in favor 
+#of the alternative hypothesis. It suggests that there is a highly significant 
+#association between lung cancer and smoking. The observed chi-squared test statistic 
+#supports this rejection of the null hypothesis since it is fairly large. 
+
+#For men who were non-smokers, the observed number of them who do not have lung 
+#cancer was 60, compared to an lower expected value of 41.02889.
+#For men who were non-smokers, the observed number of them who do have lung cancer 
+#was 22, which is lower than the expected value of 40.97111.
+#For men who were smokers, the observed number of them who do not have lung cancer 
+#was 650, which is lower than the expected value of 668.9711.
+#For men who were smokers, the observed number of them who have lung cancer was 687, 
+#which is higher than the expected value of 668.0289.
+```
+
+
+
+
+
+Q2.
+```{r Q2}
+tuberculosis<-read.csv('C:/Users/Mik/Documents/UVIC/STAT359/data/tuberculosis.csv', 
+                       header=TRUE, sep=",", fileEncoding="UTF-8-BOM")
+attach(tuberculosis)
+summary(tuberculosis)
+
+#table with observed counts
+tb.table<-tapply(TBI, list(Severity, BloodType), mean)
+print(tb.table)
+
+#barplot for tuberculosis table
+barplot(tb.table, beside=TRUE, xlab="Minimal, Moderate-Advanced, Not Present")
+title("Incidences of Tuberculosis According to Blood Type")
+
+#legend for barplot
+labels<-levels(factor(Severity))
+shade<-c(0.2,0.6,0.9)
+legend(x=7, y=45, labels, gray(shade), cex=0.7)
+
+
+##expected counts
+chi.table<-as.table(chisq.test(tb.table, correct=FALSE)$expected)
+print(chi.table)
+
+
+#Calculating Observed value of the test statistic
+#test association between disease and blood group
+
+O.F<-0
+for (i in 1:length(levels(factor(BloodType)))){
+  for (j in 1:length(levels(factor(Severity)))){
+    Eij<-chi.table[j, i]
+    Oij<-tb.table[j, i]
+    EF<-((Oij-Eij)^2)/Eij
+    O.F<- O.F + EF
+  }
+}
+
+#observed F-ratio
+print(O.F)
+
+#Assuming no association between disease and bloodtype
+summary(aov(TBI~BloodType*Severity))
+
+
+#If there is no association between severity of disease and bloodtype, then there 
+#is significant evidence against the null hypothesis in favor of the alternative
+#hypothesis that the means of the different levels of the experiment are not equal. 
+#In this case, the distribution of the test statistic is an F-distribution, which 
+#is a skewed distribution, similar to a chi-squared distribution.
+
+#compute p-value for a test of association
+1-pf(16.1427,6,12)
+
+```
+
+Null Hypothesis: BloodType and Severity are independent/Not associated
+Alternative Hypothesis: There is an association between BloodType and Severity (Dependent)
+
+The p-value provides significant evidence against the null hypothesis that BloodType and Severity are independent. There is significant evidence of an association between BloodType and Severity. 
+For minimal severity, the expected number of tuberculosis incidences for blood type A and AB were less than the observed number of incidences, but the expected number was higher for blood types B and O. 
+For moderate-advanced severity, the expected number of incidences for blood type AB and B were less than the observed number, but the expected number of A and O was higher. 
+For cases with no tuberculosis present, the expected number of incidences for blood type A and O were less than the observed, but the expected number of incidences for AB and B was greater. 
+
+
+Q3.
+```{r Q3}
+anscombe<-read.csv('C:/Users/Mik/Documents/UVIC/STAT359/data/data/anscombe.csv', 
+                   header=TRUE, sep=",", fileEncoding="UTF-8-BOM", na.strings="NA")
+attach(anscombe)
+par(mfrow=c(2,2))
+#plot a scatterplot for each dataset
+plot(Set1x, Set1y, main="Dataset 1", xlab="x", ylab="y", pch=20)
+plot(Set2x, Set2y, main="Dataset 2", xlab="x", ylab="y", pch=20)
+plot(Set3x, Set3y, main="Dataset 3", xlab="x", ylab="y", pch=20)
+plot(Set4x, Set4y, main="Dataset 4", xlab="x", ylab="y", pch=20)
+
+##(b)
+#functions to get, r^2, a^ and b^
+get.r2<-function(setx, sety){
+  x2<-sum(setx^2)
+  y2<-sum(sety^2)
+  x<-sum(setx)
+  y<-sum(sety)
+  xy<-sum(setx*sety)
+
+  SSY<-y2-(y^2)/length(sety)
+  SSX<-x2-(x^2)/length(setx)
+  SSXY<-xy - (x*y)/length(setx)
+  b.hat<-SSXY/SSX
+  SSR<-(SSXY^2)/SSX
+  r2<-(SSXY/sqrt(SSX*SSY))^2
+}
+
+get.b.hat<-function(setx, sety){
+  b.hat<-(sum(setx*sety) - sum(sety)*sum(setx)/length(sety))/(sum(setx^2) - (sum(setx)^2)/length(setx))
+}
+
+get.a.hat<-function(setx, sety, b.h){
+  a.hat<-mean(sety) - b.h*mean(setx)
+}
+
+par(mfrow=c(2,2))
+
+#linear regression plot for dataset 1
+s1b<-get.b.hat(Set1x, Set1y)
+s1a<-get.a.hat(Set1x, Set1y, s1b)
+plot(Set1x, Set1y, main="Dataset 1", xlab="x", ylab="y", pch=20)
+lines(Set1x, s1a+s1b*Set1x)
+
+set1r2<-get.r2(Set1x, Set1y)
+
+##linear regression plot for dataset 2
+s2b<-get.b.hat(Set2x, Set2y)
+s2a<-get.a.hat(Set2x, Set2y, s2b)
+plot(Set2x, Set2y, main="Dataset 2", xlab="x", ylab="y", pch=20)
+lines(Set2x, s2a+s2b*Set2x)
+
+set2r2<-get.r2(Set2x, Set2y)
+
+#linear regression plot for dataset 3
+s3b<-get.b.hat(Set3x, Set3y)
+s3a<-get.a.hat(Set3x, Set3y, s3b)
+plot(Set3x, Set3y, main="Dataset 3", xlab="x", ylab="y", pch=20)
+lines(Set3x, s3a+s3b*Set3x)
+
+set3r2<-get.r2(Set3x, Set3y)
+
+#linear regression plot for dataset 4
+s4b<-get.b.hat(Set4x, Set4y)
+s4a<-get.a.hat(Set4x, Set4y, s4b)
+plot(Set4x, Set4y, main="Dataset 4", xlab="x", ylab="y", pch=20)
+lines(Set4x, s4a+s4b*Set4x)
+
+set4r2<-get.r2(Set4x, Set4y)
+
+
+##table for r-squared values for each dataset
+r2.table<- matrix(c(set1r2, set2r2, set3r2, set4r2))
+rownames(r2.table)<-c("Dataset1", "Dataset2", "Dataset3", "Dataset4")
+colnames(r2.table)<-c("r-squared")
+r2.table<-as.table(r2.table)
+r2.table
+
+```
+Dataset 1 seems to have some sort of positive linear relationship, but not perfect, therefore the linear model given would be appropriate to be able to quantify the degree of fit.
+Dataset 2 has somewhat of a positive linear relationship but is more curved, resembling either a log, asymptotic, or power model, for this scatterplot the linear model given would not be appropriate unless using transformed values..
+Dataset 3 has a mostly positive linear relationship with one point that seems to be an outlier to the rest.This point would have influence on the least squares line by pulling it upwards on the right, taking this into account, I think the given linear model would be appropriate. 
+Dataset 4 one cluster of data points and then a more extreme outlier that would be very influential on the least squares regression line. For this dataset it is appropriate to use the given linear model. The degree of fit is very important here. It is also possible that the values could be transformed. 
+
+The r-squared value is the coefficient of determination for a dataset.It quantifies the degree of fit for the least squares regression line for a set of data points. In the r-squared table above, all the values for r^2 are very similar to one another. Even though the graphs are are all quite different the degree of fit is about the same for all of them. 
+
+
+Q4.
+```{r Q4}
+growth<-read.table(file='C:/Users/Mik/Documents/UVIC/STAT359/data/data/growth.txt',
+                   header=TRUE, sep="")
+attach(growth)
+library(nls2)
+
+t<-growth$t #x-values
+height<-growth$height #y values
+#plot data
+plot(t, height, xlab="Year", ylab="Height")
+title("Tree Height Over Time")
+
+y.<-mean(height)
+x.<-mean(t)
+
+###(a) LOGISTIC GROWTH CURVE
+#logistic<-a/(1+(b*exp(-c*t)))
+
+#point in scatterplot where curve seems to level off is about 50
+#use this value as a reasonable estimate of the asymptote
+a<-50
+#estimate y intercept to be roughly equal to 1, therefore b= 50-1 = 49
+b<-25
+#estimate of c 
+c<- -log(((a/mean(height))-1)/b)/mean(t)
+c
+
+#0.1735027
+logistic<-nls(height~a/(1+(b*exp(-c*t))), start=list(a=50, b=49, c=0.1471))
+summary(logistic)
+
+#confidence interval a = lim f(t) as t goes to infinity
+a.CI<-c(50.4208-1.96*0.8473, 50.4208+1.96*0.8473)
+print(a.CI)
+#this interval is the confidence interval for the asymptote
+
+t.f<-seq(0,50,0.1)
+h.f<-predict(logistic, list(t=t.f))
+lines(h.f, t.f, col="blue", lty=2)
+
+
+
+###(b) GOMPERTZ GROWTH CURVE
+#gompertz<-a*exp(-b*exp(-c*t))
+c.2<- -log(-log(mean(height)/a)/b)/mean(t)
+
+gompertz<-nls(height~(a*exp(-b*exp(-c.2*t))), start=list(a=50, b=49, c.2=0.1829))
+summary(gompertz)
+
+a.CI2<-c(52.21789-1.96*1.33361, 52.21789+1.96*1.33361)
+print(a.CI2)
+
+t.f2<-seq(0,50,0.1)
+h.f2<-predict(gompertz, list(t=t.f2))
+lines(h.f2, t.f2, col="red", lty=2)
+
+
+###(c) VON BERTALANFFY GROWTH CURVE
+#vonbert<-a-(a*exp(-b*(t+c)))
+#c.3<- (-log(1-(mean(height)/a))/b) - mean(t)
+#print(c.3)
+
+#vonbert<-nls(height~a-a*exp(-b*(t+c.3)), start=list(a=50, b=49, c.3=-25.46022))
+#summary(vonbert)
+
+#a.CI3<-c(52.21789-1.96*1.33361, 52.21789+1.96*1.33361)
+#print(a.CI3)
+
+#t.f3<-seq(0,50,0.1)
+#h.f3<-predict(vonbert, list(t=t.f3))
+#lines(h.f3, t.f3, col="green", lty=2)
+
+#add a legend
+labels<-c("Logistic", "Gompertz", "Von Bertalanffy")
+shade<- c("blue", "red", "green")
+legend(x=35, y=15,labels, col=shade, cex=0.7, lty=2)
+
+```
+

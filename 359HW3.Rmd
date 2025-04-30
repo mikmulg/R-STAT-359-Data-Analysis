@@ -1,0 +1,242 @@
+---
+title: "STAT359HW3"
+author: "Mikayla Mulgrew V00923052"
+date: "30/10/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Q1.
+```{r Q1}
+#read in movie length data
+mov_length<-read.csv('C:/Users/Mik/Documents/STAT359/movie_length.csv', header=TRUE, 
+                     sep=",", fileEncoding="UTF-8-BOM", na.strings="NA")
+attach(mov_length)
+library(knitr)
+kable(mov_length, caption="Data Table")
+summary(mov_length)
+
+par(mfrow=c(2,2))
+#separate data for each company, get rid of NA values
+company1<-mov_length$Company.1[!is.na(Company.1)]
+company2<-mov_length$Company.2[!is.na(Company.2)]
+
+#create a histogram to display the frequency of different running times for each company
+hist(company1, breaks=seq(80,200,by=10), main="Company 1", xlab="Movie Length (mins)", 
+     ylab="Frequency")
+hist(company2, breaks=seq(80,200,by=10), main="Company 2", xlab="Movie Length (mins)", 
+     ylab="Frequency")
+
+qqnorm(company1, main="Company 1")
+qqline(company1)
+##look relatively normal
+qqnorm(company2, main="Company 2")
+qqline(company2)
+##look slightly right skewed
+
+par(mfrow=c(1,1))
+boxplot(company1, company2, names=c('Company 1','Company 2'), col='tomato', 
+        main="Running Times of Films")
+
+#don't think the data takes a significant departure from normality
+#but hard to tell with the small sample size 
+#will use Mann-Whitney so as to not assume normality of the sample #distributions
+
+var(company1)
+var(company2)
+
+#hypothesis test with Mann-Whitney
+wilcox.test(company1, company2, mu=10, alternative="less", conf.level=0.9, paired=FALSE)
+
+```
+By analyzing various graphical representations of the data, I wasn't sure that assuming 
+normality of the data would be the best choice. Since the Mann-Whitney test can be used 
+in the small sample setting when distributions are unknown, that is what I chose. Using 
+the Mann-Whitney test, a p-value = 0.1112 was obtained. Based on this p-value, at the 0.1 
+significance level, we fail to reject the null hypothesis. This indicates the difference 
+in means between the two companies is not likely less than 10. 
+
+
+
+Q2.
+```{r Q2}
+machines<-read.csv('C:/Users/Mik/Documents/STAT359/machines.csv', header=TRUE, 
+                   sep=",", fileEncoding="UTF-8-BOM")
+kable(machines, caption="Machine Data")
+attach(machines)
+summary(machines)
+
+par(mfrow=c(2,2))
+
+hist(machines$TS, main="Histogram of Tensile Strengths", xlab="Tensile Strength (kg)")
+
+boxplot(TS[Machine=="M1"],TS[Machine=="M2"],TS[Machine=="M3"],TS[Machine=="M4"],
+        TS[Machine=="M5"],TS[Machine=="M6"], names=c("M1","M2","M3","M4","M5","M6"), 
+        col="cadetblue3")
+
+plot(1:24, TS, ylim=c(10,25), ylab="Tensile Strength", xlab="Observation Number", 
+     pch=21, bg='red') + abline(h=mean(TS), col='blue') +
+
+for (i in 1:24) {
+  lines(c(i,i), c(mean(TS), TS[i]), col="green")
+}
+
+index<-1:length(TS)
+
+par(mfrow=c(1,1))
+
+plot(1:24, TS, ylim=c(14,22), ylab="Tensile Strength", xlab="Observation Number", pch=21, 
+     bg=as.numeric(Machine), main="Deviation from Mean for Each Machine's Product") 
+
+abline(h=mean(TS[Machine=="M1"]), col="red") 
+abline(h=mean(TS[Machine=="M2"]), col="green") 
+abline(h=mean(TS[Machine=="M3"]), col="skyblue") 
+abline(h=mean(TS[Machine=="M4"]), col="purple")
+abline(h=mean(TS[Machine=="M5"]), col="maroon")
+abline(h=mean(TS[Machine=="M6"]), col="black") 
+
+for (i in 1:length(index)) {
+  
+  
+  if (Machine[i]=="M1") {
+    lines(c(index[i],index[i]),c(mean(TS[Machine=="M1"]),TS[i]), col="red")
+  }
+  if (Machine[i]=="M2") {
+    lines(c(index[i],index[i]),c(mean(TS[Machine=="M2"]),TS[i]), col="green")
+  }
+  if (Machine[i]=="M3") {
+    lines(c(index[i],index[i]),c(mean(TS[Machine=="M3"]),TS[i]), col="skyblue")
+  }
+  if (Machine[i]=="M4") {
+    lines(c(index[i],index[i]),c(mean(TS[Machine=="M4"]),TS[i]), col="purple")
+  }
+  if (Machine[i]=="M5") {
+    lines(c(index[i],index[i]),c(mean(TS[Machine=="M5"]),TS[i]), col="maroon")
+  }
+  if (Machine[i]=="M6"){
+    lines(c(index[i],index[i]),c(mean(TS[Machine=="M6"]),TS[i]),col="black")
+  }
+  
+}
+
+SSY<-sum((TS - mean(TS))^2)
+
+sumM1<-sum((TS[Machine=="M1"] - mean(TS[Machine=="M1"]))^2)
+sumM2<-sum((TS[Machine=="M2"] - mean(TS[Machine=="M2"]))^2)
+sumM3<-sum((TS[Machine=="M3"] - mean(TS[Machine=="M3"]))^2)
+sumM4<-sum((TS[Machine=="M4"] - mean(TS[Machine=="M4"]))^2)
+sumM5<-sum((TS[Machine=="M5"] - mean(TS[Machine=="M4"]))^2)
+sumM6<-sum((TS[Machine=="M6"] - mean(TS[Machine=="M6"]))^2)
+
+SSE = sumM1 + sumM2 + sumM3 + sumM4 + sumM5 + sumM6
+
+SSA<-SSY-SSE
+
+J<-6
+n<-4
+MSA<-SSA/(J-1)
+MSE<-SSE/(J*(n-1))
+F.ratio<-MSA/MSE
+F.ratio
+
+p.value<-1-pf(F.ratio, J-1, J*(n-1))
+p.value
+
+summary(aov(TS~Machine))
+
+```
+In the box-plot there is significant overlap between most of the 6 machines regarding the tensile strength of manufactured rubber seals. With a p-value  of 0.9598758, there isn't significant evidence against the null hypothesis and therefore is likely that the mean tensile strengths are the same for all 6 machines.
+
+
+
+Q3.
+```{r Q3}
+headaches<-read.csv('C:/Users/Mik/Documents/STAT359/tablet.csv', header=TRUE, 
+                    sep=",", fileEncoding="UTF-8-BOM")
+
+library(knitr)
+kable(headaches, caption="Data Table", align="l")
+
+attach(headaches)
+names(headaches)
+summary(headaches)
+
+par(mfrow=c(2,2))
+hist(reliefhours, main="Relief Hours for Different Tablets", xlab="Hours of Relief", 
+     col="chocolate")
+
+plot(factor(tablet), reliefhours, xlab="Tablet Brand", ylab="Hours of Relief", 
+     col="skyblue")
+##Not much overlap between each tablet, look like they would each be different
+
+#tapply gets mean for each different tablet type
+means<-tapply(reliefhours, tablet, mean)
+
+#ANOVA table for headaches
+summary(aov(reliefhours~tablet))
+
+#estimated sigma 
+est_sig<-summary.lm(aov(reliefhours~tablet))$sigma
+#standard error of estimated mean
+est_sig_mean<-est_sig/sqrt(5)
+
+#function for creating error bars
+eb<-function(y,z){
+  x<-barplot(y, plot=F)
+  n<-length(y)
+  for (i in 1:n)
+  {
+    arrows(x[i],y[i]-z[i],x[i],y[i]+z[i],code=3,angle=90,length=0.15)
+  }
+}
+
+#barplot with error bars based on standard error of means
+barplot(means, col="tomato", ylim=c(0,10), ylab="Mean Relief Hours", xlab="Tablet Brand", 
+        main="Error Bars: Standard Error of Means")
+halfwidth<-rep(est_sig_mean, 5)
+eb(means, halfwidth)
+
+#since the error bars are based on the standard error of the mean and there isn't 
+#overlap between all of the means 
+#there is some indication of a population difference between the tablets
+
+#barplot with error bars based on 95% C.I. 
+CI<-est_sig_mean*qt(0.95,5)
+barplot(means, col="orange", ylim=c(0,10), ylab="Mean Relief Hours", xlab="Tablet Brand", 
+        main="Error Bars: 95% Confidence Interval")
+eb(means, rep(CI, 5))
+
+#there is no overlap of the error bars between B and C, D and E. 
+#This indicates that the population means are different. 
+
+#Compute Hypothesis Test
+summary.lm(aov(reliefhours~tablet))
+
+#finding the statistics from the ANOVA table alternatively 
+SSY<-sum((reliefhours-mean(reliefhours))^2)
+
+sumA<-sum((reliefhours[tablet=="A"] - mean(reliefhours[tablet=="A"]))^2)
+sumB<-sum((reliefhours[tablet=="B"] - mean(reliefhours[tablet=="B"]))^2)
+sumC<-sum((reliefhours[tablet=="C"] - mean(reliefhours[tablet=="C"]))^2)
+sumD<-sum((reliefhours[tablet=="D"] - mean(reliefhours[tablet=="D"]))^2)
+sumE<-sum((reliefhours[tablet=="E"] - mean(reliefhours[tablet=="E"]))^2)
+
+SSE<-sumA + sumB + sumC + sumD + sumE
+
+SSA<-SSY-SSE
+
+J<-5
+n<-5
+MSA<-SSA/(J-1)
+MSE<-SSE/(J*(n-1))
+F.ratio<-MSA/MSE
+F.ratio
+
+p.value<-1-pf(F.ratio, J-1, J*(n-1))
+p.value
+
+
+```
+The p-value = 0.001497, therefore there is significant evidence against the null hypothesis in favor of the alternative hypothesis. It can be concluded that the mean hours of relief for each tablet are not equal. Looking at the Error Bars computed using the 95% Confidence Interval, there are a few tablet brands for which there is no overlap. This indicated early on that the population means were likely different. Similarly for the Error Bars computed for the standard error of means. Looking at the box-plots for each tablet, again there are a few tablets for which there is no overlap. 
